@@ -48,7 +48,7 @@ value_rules:
     action: hash
 
   - name: jwt
-    pattern: 'eyJ[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]*'
+    pattern: 'eyJ[A-Za-z0-9_+/=-]+\.[A-Za-z0-9_+/=-]+\.[A-Za-z0-9_+/=-]*'
     action: mask
 
   - name: credit-card

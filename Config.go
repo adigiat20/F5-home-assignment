@@ -1,23 +1,13 @@
 package main
- 
+
 import (
-	"bufio"
-	"bytes"
-	"crypto/sha256"
-	"crypto/sha512"
-	"encoding/hex"
-	"encoding/json"
-	"flag"
 	"fmt"
-	"io"
 	"os"
 	"regexp"
-	"sort"
 	"strings"
- 
+
 	"gopkg.in/yaml.v3"
 )
-
 
 type Settings struct {
 	Mask struct {
@@ -31,52 +21,48 @@ type Settings struct {
 		Algorithm string `yaml:"algorithm"`
 	} `yaml:"hash"`
 }
- 
+
 type KeyRule struct {
 	Name  string `yaml:"name"`
-	Scope string `yaml:"scope"` // headers | body...
+	Scope string `yaml:"scope"` // headers | body | any
 	Match struct {
 		Exact []string `yaml:"exact"`
 		Regex string   `yaml:"regex"`
 	} `yaml:"match"`
 	Action string `yaml:"action"`
- 
-	re    *regexp.Regexp
-	exact map[string]bool // lowercased
+
+	re    *regexp.Regexp  // compiled Match.Regex
+	exact map[string]bool // lowercased Match.Exact
 }
- 
+
 type ValueRule struct {
 	Name      string `yaml:"name"`
 	Pattern   string `yaml:"pattern"`
 	Action    string `yaml:"action"`
 	Validator string `yaml:"validator"`
- 
+
 	re *regexp.Regexp
 }
- 
+
 type Config struct {
 	Settings   Settings    `yaml:"settings"`
 	KeyRules   []KeyRule   `yaml:"key_rules"`
 	ValueRules []ValueRule `yaml:"value_rules"`
 }
- 
-type Redactor struct {
-	cfg    Config
-	counts map[string]int
-}
- /*	in this function we set the configrations and look for any errors while scannig the yaml  */
+
+// LoadConfig reads, validates and pre-compiles the rules file.
 func LoadConfig(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 	cfg := &Config{}
-	// set the replacement for hashing
+	// defaults survive when the YAML omits the settings block
 	cfg.Settings.Mask.Replacement = "****"
 	cfg.Settings.Partial.KeepLast = 4
 	cfg.Settings.Partial.Fill = "*"
 	cfg.Settings.Hash.Algorithm = "sha256"
- 
+
 	if err := yaml.Unmarshal(data, cfg); err != nil {
 		return nil, fmt.Errorf("parse %s: %w", path, err)
 	}
@@ -85,7 +71,7 @@ func LoadConfig(path string) (*Config, error) {
 	}
 	return cfg, nil
 }
- 
+
 func validAction(a string) bool {
 	switch a {
 	case "mask", "partial", "hash", "remove":
@@ -93,7 +79,7 @@ func validAction(a string) bool {
 	}
 	return false
 }
- 
+
 func (c *Config) validate() error {
 	if a := c.Settings.Hash.Algorithm; a != "sha256" && a != "sha512" {
 		return fmt.Errorf("unsupported hash algorithm %q", a)
@@ -101,7 +87,7 @@ func (c *Config) validate() error {
 	if c.Settings.Partial.Fill == "" {
 		c.Settings.Partial.Fill = "*"
 	}
- 
+
 	var err error
 	for i := range c.KeyRules {
 		kr := &c.KeyRules[i]
