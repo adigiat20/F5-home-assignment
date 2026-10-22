@@ -161,8 +161,3 @@ Prometheus-style metrics
    - docker run -p 8081:8080 redactor:latest --serve --addr :8080 --rules rules.yaml
    open a new terminal:
    -curl http://localhost:8081/metrics
-
-Hot-reload of the rules file
-3. 
-
-
