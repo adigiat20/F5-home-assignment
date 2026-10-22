@@ -50,14 +50,13 @@ type Config struct {
 	ValueRules []ValueRule `yaml:"value_rules"`
 }
 
-// LoadConfig reads, validates and pre-compiles the rules file.
+
 func LoadConfig(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 	cfg := &Config{}
-	// defaults survive when the YAML omits the settings block
 	cfg.Settings.Mask.Replacement = "****"
 	cfg.Settings.Partial.KeepLast = 4
 	cfg.Settings.Partial.Fill = "*"

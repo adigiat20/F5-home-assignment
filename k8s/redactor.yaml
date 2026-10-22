@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: redactor
+  labels:
+    app: redactor
+spec:
+  type: ClusterIP
+  selector:
+    app: redactor
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redactor
+  labels:
+    app: redactor
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: redactor
+  template:
+    metadata:
+      labels:
+        app: redactor
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: redactor
+          image: redactor:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--serve"
+            - "--addr"
+            - ":8080"
+            - "--rules"
+            - "/etc/redactor/rules.yaml"
+          ports:
+            - name: http
+              containerPort: 8080
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 2
+            failureThreshold: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: rules
+              mountPath: /etc/redactor
+              readOnly: true
+      volumes:
+        - name: rules
+          configMap:
+            name: redactor-rules

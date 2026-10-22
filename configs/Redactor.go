@@ -11,9 +11,10 @@ import (
 )
 
 type Redactor struct {
-	cfg    *Config
-	mu     sync.Mutex
-	counts map[string]int
+	mu             sync.Mutex
+	cfg            *Config
+	counts         map[string]int
+	bytesProcessed int64 // <-- הוספת השדה החסר!
 }
 
 func (r *Redactor) inc(name string) {
@@ -48,22 +49,18 @@ func (r *Redactor) WriteSummary(w io.Writer) {
 		names = append(names, n)
 	}
 	sort.Strings(names)
-		fmt.Fprintln(w, "redaction summary:")
+	fmt.Fprintln(w, "redaction summary:")
 	for _, n := range names {
 		fmt.Fprintf(w, "%-20s %d\n", n, r.counts[n])
 	}
 }
 
-// Scopes: "record" = top of a line or the response object;
-// "headers" and "body" as in the config; "meta" = ts, method, path, status...
-
-// walk recursively redacts any decoded JSON value.
 func (r *Redactor) walk(v any, scope string) any {
 	switch x := v.(type) {
 	case map[string]any:
 		for k, val := range x {
 			if rule := r.keyRule(k, scope); rule != nil {
-				r.counts[rule.Name]++
+				r.inc(rule.Name)
 				if rule.Action == "remove" {
 					delete(x, k)
 					continue
@@ -143,4 +140,20 @@ func marshal(v any) string {
 	enc.SetEscapeHTML(false)
 	_ = enc.Encode(v)
 	return strings.TrimRight(buf.String(), "\n")
+}
+
+func (r *Redactor) GetBytesProcessed() int64 {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.bytesProcessed
+}
+
+func (r *Redactor) GetRedactionCount() int64 {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var total int64
+	for _, count := range r.counts {
+		total += int64(count)
+	}
+	return total
 }

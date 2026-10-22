@@ -11,9 +11,6 @@ type hit struct {
 	order      int // index of the rule in the config
 }
 
-// redactText applies all value rules to plain text. Matches are found on the
-// ORIGINAL string, overlaps are resolved (earliest start wins, then rule order),
-// and the string is rebuilt once. Rules therefore never see each other's output.
 func (r *Redactor) redactText(s string) string {
 	var hits []hit
 	for i := range r.cfg.ValueRules {
@@ -44,7 +41,7 @@ func (r *Redactor) redactText(s string) string {
 		b.WriteString(s[last:h.start])
 		b.WriteString(r.apply(h.rule.Action, s[h.start:h.end]))
 		last = h.end
-		r.counts[h.rule.Name]++
+		r.inc(h.rule.Name)
 	}
 	b.WriteString(s[last:])
 	return b.String()

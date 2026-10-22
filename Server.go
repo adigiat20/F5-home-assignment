@@ -27,6 +27,16 @@ func serve(red *configs.Redactor, addr string) error {
 			log.Printf("POST /redact: %v", err)
 		}
 	})
+	mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; version=0.0.4")
+		fmt.Fprintf(w, "# HELP redacted_bytes_total Total bytes processed\n")
+		fmt.Fprintf(w, "# TYPE redacted_bytes_total counter\n")
+		fmt.Fprintf(w, "redacted_bytes_total %d\n", red.GetBytesProcessed())
+		
+		fmt.Fprintf(w, "# HELP redactions_total Total redaction events\n")
+		fmt.Fprintf(w, "# TYPE redactions_total counter\n")
+		fmt.Fprintf(w, "redactions_total %d\n", red.GetRedactionCount())
+	})
 
 	log.Printf("listening on %s", addr)
 	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 10 * time.Second}
