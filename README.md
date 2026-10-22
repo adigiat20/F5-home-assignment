@@ -46,7 +46,7 @@ running input.ndjson (mode http port 8080):
 
 (running the tests include inside Dockerfile)
 
-## A health endpoint 
+## A health endpoint  (Git Bash)
 - curl http://localhost:8080/healthz
 
 What i found about the JWT report and what i did?
