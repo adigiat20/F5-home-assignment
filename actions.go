@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// apply performs one of: mask | partial | hash | remove on s.
+// apply performs one of: mask | partial | hash | remove on the string s.
 func (r *Redactor) apply(action, s string) string {
 	st := r.cfg.Settings
 	switch action {

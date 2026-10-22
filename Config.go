@@ -81,6 +81,9 @@ func validAction(a string) bool {
 }
 
 func (c *Config) validate() error {
+	if len(c.KeyRules)+len(c.ValueRules) == 0 {
+		return fmt.Errorf("no rules defined: refusing to run as a pass-through")
+	}
 	if a := c.Settings.Hash.Algorithm; a != "sha256" && a != "sha512" {
 		return fmt.Errorf("unsupported hash algorithm %q", a)
 	}
