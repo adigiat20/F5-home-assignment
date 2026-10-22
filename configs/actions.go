@@ -1,4 +1,4 @@
-package main
+package configs
 
 import (
 	"crypto/sha256"
@@ -28,28 +28,21 @@ func (r *Redactor) apply(action, s string) string {
 		sum := sha256.Sum256([]byte(s))
 		return hex.EncodeToString(sum[:])
 	}
-	return "" // remove (for value rules: delete the matched text)
+	return ""
 }
-
 // luhn reports whether s (digits, optionally with spaces/dashes) passes the
 // Luhn checksum and has a plausible card length (13-19 digits).
 func luhn(s string) bool {
-	var digits []int
-	for _, c := range s {
-		switch {
-		case c >= '0' && c <= '9':
-			digits = append(digits, int(c-'0'))
-		case c == ' ' || c == '-':
-		default:
+	sum, n, double := 0, 0, false
+	for i := len(s) - 1; i >= 0; i-- {
+		c := s[i]
+		if c == ' ' || c == '-' {
+			continue
+		}
+		if c < '0' || c > '9' {
 			return false
 		}
-	}
-	if len(digits) < 13 || len(digits) > 19 {
-		return false
-	}
-	sum, double := 0, false
-	for i := len(digits) - 1; i >= 0; i-- {
-		d := digits[i]
+		d := int(c - '0')
 		if double {
 			if d *= 2; d > 9 {
 				d -= 9
@@ -57,6 +50,7 @@ func luhn(s string) bool {
 		}
 		sum += d
 		double = !double
+		n++
 	}
-	return sum%10 == 0
+	return n >= 13 && n <= 19 && sum%10 == 0
 }

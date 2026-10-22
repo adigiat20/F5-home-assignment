@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"redactor/configs"
 )
 
 func main() {
@@ -18,11 +19,11 @@ func main() {
 	flag.Parse()
 
 	// Fail closed: without valid rules we exit before reading or listening
-	cfg, err := LoadConfig(*rulesPath)
+	cfg, err := configs.LoadConfig(*rulesPath)
 	if err != nil {
 		fatal(err)
 	}
-	red := NewRedactor(cfg)
+	red := configs.NewRedactor(cfg)
 
 	if *serveMode {
 		fatal(serve(red, *addr)) // only returns on error
@@ -45,7 +46,7 @@ func main() {
 
 // run streams the input line by line through the redactor. Lines that are not
 // valid JSON are dropped with a warning (fail closed).
-func run(red *Redactor, in io.Reader, out, warn io.Writer) error {
+func run(red *configs.Redactor, in io.Reader, out, warn io.Writer) error {
 	w := bufio.NewWriter(out)
 	rd := bufio.NewReaderSize(in, 1<<20) // ReadBytes has no 64KB line limit, unlike bufio.Scanner
 	lineNo := 0

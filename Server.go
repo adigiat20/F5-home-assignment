@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"redactor/configs"
 )
 
-func serve(red *Redactor, addr string) error {
+func serve(red *configs.Redactor, addr string) error {
 	mux := http.NewServeMux() // get http req 
 
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
