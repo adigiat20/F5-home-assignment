@@ -1,5 +1,5 @@
 package main
- 
+
 import (
 	"crypto/sha256"
 	"crypto/sha512"
@@ -7,17 +7,16 @@ import (
 	"strings"
 )
 
-
-//apply performs one of: mask | partial | hash | remove on the string s
+// apply performs one of: mask | partial | hash | remove on s.
 func (r *Redactor) apply(action, s string) string {
 	st := r.cfg.Settings
 	switch action {
 	case "mask":
 		return st.Mask.Replacement
 	case "partial":
-		rs := []rune(s)  
+		rs := []rune(s)
 		keep := st.Partial.KeepLast
-		if keep > len(rs) {
+		if keep >= len(rs) {
 			keep = 0 // too short: hide everything rather than leak it
 		}
 		return strings.Repeat(st.Partial.Fill, len(rs)-keep) + string(rs[len(rs)-keep:])
@@ -31,7 +30,7 @@ func (r *Redactor) apply(action, s string) string {
 	}
 	return "" // remove (for value rules: delete the matched text)
 }
- 
+
 // luhn reports whether s (digits, optionally with spaces/dashes) passes the
 // Luhn checksum and has a plausible card length (13-19 digits).
 func luhn(s string) bool {
